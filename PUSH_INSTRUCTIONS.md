@@ -13,7 +13,7 @@ Your local repo is initialized and the initial commit is done. To create a **new
 
 ## 2. Add remote and push
 
-Replace `YOUR_USERNAME` with your GitHub username and `REPO_NAME` with the repo name you used (e.g. `jobs-usa-for-international-students`):
+Replace `YOUR_USERNAME` with your GitHub username and `REPO_NAME` with the repo name you used:
 
 ```bash
 cd "/Users/vakatirutvijreddy/Projects/jobs-usa-for -international-students"
@@ -26,10 +26,10 @@ git branch -M main
 git push -u origin main
 ```
 
-Example if your username is `vakatirutvijreddy` and repo name is `jobs-usa-for-international-students`:
+Example (username `rutvij1407`, repo `jobs-usa-for-international-students`):
 
 ```bash
-git remote add origin https://github.com/vakatirutvijreddy/jobs-usa-for-international-students.git
+git remote add origin https://github.com/rutvij1407/jobs-usa-for-international-students.git
 git branch -M main
 git push -u origin main
 ```
