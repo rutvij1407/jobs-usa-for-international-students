@@ -21,6 +21,8 @@ python3 run.py
 
 Then open **http://127.0.0.1:8050** in your browser.
 
+**Push to a new GitHub repo:** See [PUSH_INSTRUCTIONS.md](PUSH_INSTRUCTIONS.md) for step-by-step (create repo on GitHub, then `git remote add origin ...` and `git push -u origin main`).
+
 ---
 
 ## Contents of This Repo
