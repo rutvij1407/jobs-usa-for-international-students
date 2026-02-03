@@ -1,0 +1,39 @@
+# F1 International Students — Job Dashboard Backend
+# Python 3.10+ recommended
+
+# Visualization & dashboards
+plotly>=5.18.0
+dash>=2.14.0
+dash-bootstrap-components>=1.5.0
+matplotlib>=3.8.0
+kaleido>=0.2.1
+
+# Data processing
+pandas>=2.1.0
+numpy>=1.26.0
+
+# HTTP & config
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Scheduling (daily data refresh)
+apscheduler>=3.10.0
+
+# Resume parsing & NLP
+spacy>=3.7.0
+nltk>=3.8.0
+PyPDF2>=3.0.0
+pdfplumber>=0.10.0
+python-docx>=1.1.0
+
+# API & serving (optional)
+fastapi>=0.108.0
+uvicorn[standard]>=0.25.0
+
+# Maps & geo (optional)
+folium>=0.15.0
+geopandas>=0.14.0
+
+# Database (optional)
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
