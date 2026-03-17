@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>USA Job Map - Google Maps</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: sans-serif; }
+    #map { height: 100vh; width: 100%; }
+    #no-key { padding: 2rem; text-align: center; color: #666; }
+    #no-key a { color: #0d6efd; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="no-key" style="display:none;">
+    <p>Google Maps API key is not set.</p>
+    <p>See <a href="/">GOOGLE_MAPS_SETUP.md</a> for how to get an API key and set GOOGLE_MAPS_API_KEY in .env</p>
+  </div>
+  <script>
+    const API_KEY = "{{ API_KEY }}";
+    const BASE_URL = "{{ BASE_URL }}";
+    if (!API_KEY) {
+      document.getElementById("map").style.display = "none";
+      document.getElementById("no-key").style.display = "block";
+    } else {
+      function loadMap() {
+        const map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 39.5, lng: -98 },
+          zoom: 4,
+          mapTypeId: "roadmap"
+        });
+        const url = BASE_URL + "/api/map-data?job_type=" + encodeURIComponent("{{ job_type }}") +
+          "&company_type=" + encodeURIComponent("{{ company_type }}") +
+          "&industry=" + encodeURIComponent("{{ industry }}");
+        fetch(url)
+          .then(r => r.json())
+          .then(data => {
+            const points = data.map(d => ({
+              location: new google.maps.LatLng(d.lat, d.lng),
+              weight: Math.max(1, d.effectiveness_score / 500)
+            }));
+            const heatmap = new google.maps.visualization.HeatmapLayer({ data: points });
+            heatmap.setMap(map);
+            heatmap.set("radius", 30);
+            heatmap.set("opacity", 0.65);
+          })
+          .catch(e => console.error(e));
+      }
+      const script = document.createElement("script");
+      script.src = "https://maps.googleapis.com/maps/api/js?key=" + API_KEY + "&libraries=visualization&callback=loadMap";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+  </script>
+</body>
+</html>

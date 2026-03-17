@@ -4,29 +4,52 @@ Main Dash app: multi-page routing (USA map, state detail, mistakes, H1B market, 
 import dash
 from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
-from dashboards.pages import main_map, state_detail, job_mistakes, h1b_market, candidate_analysis
+from dashboards.pages import main_map, state_detail, job_mistakes, h1b_market, candidate_analysis, data_engineer
+from pathlib import Path
+from flask import request, Response
+import json
 
-# Bootstrap theme for clean UI
+from config.settings import GOOGLE_MAPS_API_KEY
+from backend.services.h1b_analytics import get_map_data_for_google
+from backend.services.kml_generator import generate_h1b_kml
+
+# Bootstrap theme + custom CSS (in dashboards/assets/custom.css)
 app = dash.Dash(
     __name__,
     use_pages=False,
-    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    external_stylesheets=[dbc.themes.BOOTSTRAP, "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"],
     suppress_callback_exceptions=True,
+    title="F1 Job Dashboard",
 )
 
-# Navigation links
-NAV = dbc.NavbarSimple(
-    children=[
-        dbc.NavItem(dbc.NavLink("USA Map", href="/")),
-        dbc.NavItem(dbc.NavLink("Job Mistakes", href="/mistakes")),
-        dbc.NavItem(dbc.NavLink("H1B Market", href="/h1b")),
-        dbc.NavItem(dbc.NavLink("Candidate Analysis", href="/candidate")),
-    ],
-    brand="F1 Job Dashboard",
-    brand_href="/",
+# Navigation
+NAV = dbc.Navbar(
+    dbc.Container(
+        [
+            dbc.NavbarBrand("F1 Job Dashboard", href="/", className="fw-bold"),
+            dbc.NavbarToggler(id="navbar-toggler"),
+            dbc.Collapse(
+                        dbc.Nav(
+                            [
+                                dbc.NavItem(dbc.NavLink("USA Map", href="/", active="exact")),
+                                dbc.NavItem(dbc.NavLink("Job Mistakes", href="/mistakes", active="exact")),
+                                dbc.NavItem(dbc.NavLink("H1B Market", href="/h1b", active="exact")),
+                                dbc.NavItem(dbc.NavLink("Candidate Analysis", href="/candidate", active="exact")),
+                                dbc.NavItem(dbc.NavLink("Data Engineer", href="/data-engineer", active="exact")),
+                            ],
+                    navbar=True,
+                    className="ms-auto",
+                ),
+                id="navbar-collapse",
+                navbar=True,
+                is_open=True,
+            ),
+        ],
+        fluid=True,
+    ),
     color="primary",
     dark=True,
-    className="mb-4",
+    className="mb-4 shadow-sm",
 )
 
 app.layout = html.Div(
@@ -34,9 +57,64 @@ app.layout = html.Div(
         dcc.Location(id="url", refresh=False),
         dcc.Store(id="current-state", data=None),
         NAV,
-        html.Div(id="page-content"),
-    ]
+        html.Main(html.Div(id="page-content"), className="min-vh-100"),
+    ],
+    style={"minHeight": "100vh", "background": "#f8f9fa"},
 )
+
+# ----- Google Maps API and map view (data access for map) -----
+@app.server.route("/api/map-data")
+def api_map_data():
+    """Return JSON list of {state, lat, lng, job_count, petitions, effectiveness_score} for Google Maps."""
+    job_type = request.args.get("job_type", "All")
+    company_type = request.args.get("company_type", "All")
+    industry = request.args.get("industry", "All")
+    data = get_map_data_for_google(job_type=job_type, company_type=company_type, industry=industry)
+    return Response(json.dumps(data), mimetype="application/json")
+
+
+@app.server.route("/api/h1b.kml")
+def api_h1b_kml():
+    """Generate KML from backend for Google Earth. Same data as map; lightweight."""
+    job_type = request.args.get("job_type", "All")
+    company_type = request.args.get("company_type", "All")
+    industry = request.args.get("industry", "All")
+    data = get_map_data_for_google(job_type=job_type, company_type=company_type, industry=industry)
+    places = [
+        {
+            "name": d["state"],
+            "state": d["state"],
+            "latitude": d["lat"],
+            "longitude": d["lng"],
+            "lat": d["lat"],
+            "lng": d["lng"],
+            "job_count": d["job_count"],
+            "petitions": d["petitions"],
+            "effectiveness_score": d["effectiveness_score"],
+        }
+        for d in data
+    ]
+    kml = generate_h1b_kml(places)
+    return Response(kml, mimetype="application/vnd.google-earth.kml+xml", headers={"Content-Disposition": "attachment; filename=h1b-jobs-usa.kml"})
+
+
+@app.server.route("/map-view")
+def map_view():
+    """Serve Google Maps HTML page; filters passed as query params."""
+    template_path = Path(__file__).resolve().parent / "templates" / "google_map.html"
+    if not template_path.exists():
+        return Response("Map template not found.", status=404)
+    html_content = template_path.read_text()
+    base_url = request.url_root.rstrip("/")
+    job_type = request.args.get("job_type", "All")
+    company_type = request.args.get("company_type", "All")
+    industry = request.args.get("industry", "All")
+    html_content = html_content.replace("{{ API_KEY }}", GOOGLE_MAPS_API_KEY or "")
+    html_content = html_content.replace("{{ BASE_URL }}", base_url)
+    html_content = html_content.replace("{{ job_type }}", job_type)
+    html_content = html_content.replace("{{ company_type }}", company_type)
+    html_content = html_content.replace("{{ industry }}", industry)
+    return Response(html_content, mimetype="text/html")
 
 
 @callback(
@@ -58,12 +136,15 @@ def render_page(pathname):
         return h1b_market.layout(), None
     if pathname == "/candidate":
         return candidate_analysis.layout(), None
+    if pathname == "/data-engineer":
+        return data_engineer.layout(), None
     # Default: USA map
     return main_map.layout(), None
 
 
 # Register all page callbacks
 main_map.register_callbacks(app)
+data_engineer.register_callbacks(app)
 job_mistakes.register_callbacks(app)
 h1b_market.register_callbacks(app)
 candidate_analysis.register_callbacks(app)

@@ -16,28 +16,35 @@ from dashboards.components.filters import mistakes_filters_row
 
 
 def layout():
-    return dbc.Container(
-        [
-            html.H2("Job Application Mistakes", className="mb-3"),
-            html.P(
-                "Track mistakes when applying via LinkedIn (e.g., redirect to LinkedIn form instead of employer site). "
-                "Use filters to narrow by date, source, and mistake type.",
-                className="text-muted mb-3",
-            ),
-            mistakes_filters_row(id_prefix="mistakes"),
-            dbc.Row(
+    return html.Div(
+        className="page-content-wrap",
+        children=[
+            html.Div(
                 [
-                    dbc.Col(dcc.Graph(id="mistakes-by-type"), width=6),
-                    dbc.Col(dcc.Graph(id="mistakes-by-source"), width=6),
+                    html.H1("Job Application Mistakes", className="page-title"),
+                    html.P(
+                        "Track mistakes when applying via LinkedIn (e.g., redirect to LinkedIn form instead of employer site). "
+                        "Filter by date, source, and mistake type.",
+                        className="page-subtitle",
+                    ),
                 ],
                 className="mb-4",
             ),
-            dbc.Row([dbc.Col(dcc.Graph(id="mistakes-time-series"), width=12)], className="mb-4"),
-            html.H5("Recent mistakes (sample)", className="mt-3"),
-            html.Div(id="mistakes-table-wrap"),
+            html.Div(mistakes_filters_row(id_prefix="mistakes"), className="filter-row"),
+            dbc.Row(
+                [
+                    dbc.Col(html.Div(dcc.Graph(id="mistakes-by-type", config={"responsive": True}), className="dash-graph-card"), width=6),
+                    dbc.Col(html.Div(dcc.Graph(id="mistakes-by-source", config={"responsive": True}), className="dash-graph-card"), width=6),
+                ],
+                className="mb-4",
+            ),
+            dbc.Row(
+                [dbc.Col(html.Div(dcc.Graph(id="mistakes-time-series", config={"responsive": True}), className="dash-graph-card"), width=12)],
+                className="mb-4",
+            ),
+            html.H5("Recent mistakes (sample)", className="mt-3 mb-2"),
+            html.Div(id="mistakes-table-wrap", className="table-responsive-wrap"),
         ],
-        fluid=True,
-        className="py-4",
     )
 
 
@@ -62,27 +69,35 @@ def register_callbacks(app):
         by_type = get_mistakes_by_type_df(start_date=start, end_date=end)
         by_source = get_mistakes_by_source_df(start_date=start, end_date=end)
         ts = get_mistakes_time_series(start_date=start, end_date=end, freq="W")
-        raw = get_mistakes_filtered(start_date=start, end_date=end, source=source or "All", mistake_type=mistake_type or "All")
+        raw = get_mistakes_filtered(start_date=start, end_date=end, source=source, mistake_type=mistake_type)
 
         fig_type = px.bar(
             by_type, x="mistake_type", y="count", title="Mistakes by type",
             labels={"mistake_type": "Type", "count": "Count"},
         )
-        fig_type.update_layout(xaxis_tickangle=-45)
+        fig_type.update_layout(xaxis_tickangle=-45, margin=dict(t=40, b=120), height=320)
 
         fig_source = px.pie(
             by_source, names="source", values="count", title="Mistakes by application source",
         )
+        fig_source.update_layout(margin=dict(t=40), height=320)
 
         fig_ts = go.Figure(
-            data=[go.Scatter(x=ts["date"], y=ts["count"], mode="lines+markers", name="Mistakes")],
-            layout=go.Layout(title="Mistakes over time (weekly)", xaxis_title="Date", yaxis_title="Count", height=350),
+            data=[go.Scatter(x=ts["date"], y=ts["count"], mode="lines+markers", name="Mistakes", line=dict(color="#0d6efd"))],
+            layout=go.Layout(
+                title="Mistakes over time (weekly)",
+                xaxis_title="Date",
+                yaxis_title="Count",
+                height=320,
+                margin=dict(t=40),
+            ),
         )
 
         table = dbc.Table.from_dataframe(
-            raw.head(15)[["date", "company", "job_title", "source", "mistake_type"]].round(0),
+            raw.head(15)[["date", "company", "job_title", "source", "mistake_type"]],
             striped=True,
             bordered=True,
             size="sm",
+            className="mb-0",
         )
         return fig_type, fig_source, fig_ts, table

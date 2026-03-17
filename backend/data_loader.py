@@ -24,11 +24,13 @@ from config.settings import (
 def _synthetic_h1b_by_state() -> pd.DataFrame:
     """Generate synthetic H1B petition counts by state for analytics."""
     np.random.seed(42)
-    # Weight toward CA, TX, NY, WA, NJ
-    weights = np.array([3, 0.5, 2, 0.8, 15, 2, 1.5, 0.3, 5, 2, 0.5, 0.5, 4, 1.5, 0.8, 0.6, 0.8, 0.5, 0.3, 1,
-                        2.5, 2, 1.5, 0.5, 1.2, 0.3, 0.6, 1, 0.4, 1.5, 0.5, 4, 2, 0.3, 2, 1, 0.8, 1.2, 1.5, 0.3, 0.8,
-                        0.2, 1, 8, 1, 0.2, 1, 1.5, 0.5, 1, 0.3, 1])
     n = len(USA_STATES)
+    weights = np.ones(n) * 1.2
+    for idx, st in enumerate(USA_STATES):
+        if st == "CA": weights[idx] = 15
+        elif st == "TX": weights[idx] = 8
+        elif st in ("NY", "WA", "NJ"): weights[idx] = 5
+        elif st in ("FL", "IL", "MA"): weights[idx] = 3
     petitions = (np.random.rand(n) * 2000 + weights * 1500).astype(int)
     return pd.DataFrame({
         "state": USA_STATES,
@@ -41,10 +43,12 @@ def _synthetic_job_postings_by_state() -> pd.DataFrame:
     """Synthetic daily job postings aggregated by state (for heat map)."""
     np.random.seed(43)
     n = len(USA_STATES)
-    # Align with H1B hotspots
-    base = np.array([500, 100, 400, 150, 2500, 400, 300, 80, 1200, 600, 120, 150, 900, 350, 200, 180, 220, 100, 80, 250,
-                     400, 350, 280, 120, 300, 90, 150, 200, 100, 280, 120, 800, 450, 80, 400, 200, 250, 350, 100, 200,
-                     60, 180, 1200, 250, 60, 220, 350, 120, 200, 80, 180])
+    base = np.ones(n) * 200
+    for idx, st in enumerate(USA_STATES):
+        if st == "CA": base[idx] = 2500
+        elif st == "TX": base[idx] = 1200
+        elif st in ("NY", "WA", "FL"): base[idx] = 800
+        elif st in ("NJ", "IL", "MA"): base[idx] = 400
     noise = np.random.rand(n) * 200
     return pd.DataFrame({
         "state": USA_STATES,

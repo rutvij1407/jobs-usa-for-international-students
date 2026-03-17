@@ -1,6 +1,6 @@
-# F1 International Students — Job Dashboard Backend
+# F1 International Students - Job Dashboard Backend
 # Python 3.10+ recommended
-
+#
 # Visualization & dashboards
 plotly>=5.18.0
 dash>=2.14.0
@@ -11,6 +11,7 @@ kaleido>=0.2.1
 # Data processing
 pandas>=2.1.0
 numpy>=1.26.0
+pyarrow>=14.0.0
 
 # HTTP & config
 requests>=2.31.0

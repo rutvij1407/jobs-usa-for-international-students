@@ -1,41 +1,63 @@
 """
-State detail page: same heat map style for one state (zoomed); filters apply.
+State detail page: same heat map style for one state; filters apply.
 """
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output, callback
-import plotly.graph_objects as go
-from backend.services.h1b_analytics import get_state_detail, get_state_level_metrics
+from dash import dcc, html
 from dashboards.components.filters import map_filters_row
 
 
 def layout(state_abbr: str = None):
     state = (state_abbr or "CA").upper()
-    return dbc.Container(
-        [
-            html.H2(f"State Detail: {state}", className="mb-3"),
-            html.P(
-                "Same heat map style for this state. Use filters to narrow by job type, company, industry.",
-                className="text-muted mb-3",
-            ),
-            map_filters_row(id_prefix="state"),
-            dcc.Graph(id="state-heatmap"),
-            html.Hr(),
-            html.H5("Metrics", className="mt-3"),
-            dbc.Row(
+    return html.Div(
+        className="page-content-wrap",
+        children=[
+            html.Div(
                 [
-                    dbc.Col(dbc.Card([dbc.CardBody([html.H6("Job count", className="text-muted"), html.P(id="state-job-count")])]), width=3),
-                    dbc.Col(dbc.Card([dbc.CardBody([html.H6("H1B petitions", className="text-muted"), html.P(id="state-h1b")])]), width=3),
-                    dbc.Col(dbc.Card([dbc.CardBody([html.H6("Effectiveness score", className="text-muted"), html.P(id="state-score")])]), width=3),
+                    dcc.Link("← Back to USA map", href="/", className="btn btn-outline-primary btn-sm mb-3"),
+                    html.H1(f"State: {state}", className="page-title"),
+                    html.P(
+                        "Metrics and heat map for this state. Use filters to narrow by job type, company, industry.",
+                        className="page-subtitle",
+                    ),
                 ],
                 className="mb-4",
             ),
-            dcc.Link("← Back to USA map", href="/", className="btn btn-outline-primary"),
+            html.Div(map_filters_row(id_prefix="state"), className="filter-row"),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.Card(
+                            [dbc.CardBody([html.H6("Job count", className="text-muted"), html.P(id="state-job-count", className="h4 mb-0")])],
+                            className="dash-card",
+                        ),
+                        width=3,
+                    ),
+                    dbc.Col(
+                        dbc.Card(
+                            [dbc.CardBody([html.H6("H1B petitions", className="text-muted"), html.P(id="state-h1b", className="h4 mb-0")])],
+                            className="dash-card",
+                        ),
+                        width=3,
+                    ),
+                    dbc.Col(
+                        dbc.Card(
+                            [dbc.CardBody([html.H6("Effectiveness score", className="text-muted"), html.P(id="state-score", className="h4 mb-0")])],
+                            className="dash-card",
+                        ),
+                        width=3,
+                    ),
+                ],
+                className="mb-4",
+            ),
+            html.Div(
+                [
+                    dcc.Graph(
+                        id="state-heatmap",
+                        config={"displayModeBar": True, "responsive": True},
+                        style={"height": "420px", "width": "100%"},
+                    ),
+                ],
+                className="map-container",
+            ),
         ],
-        fluid=True,
-        className="py-4",
     )
-
-
-def register_callbacks(app, state_abbr: str = None):
-    """State detail callbacks are registered in app_dash (use current-state Store)."""
-    pass

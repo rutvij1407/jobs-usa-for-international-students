@@ -1,11 +1,13 @@
 """
-Daily data refresh pipeline: writes processed H1B and job-postings data.
+Daily data refresh pipeline (ETL): writes processed H1B and job-postings data.
+Data engineer responsibilities: run daily (cron/scheduler), monitor via Data Engineer dashboard.
 In production, replace synthetic generation with real API/scrape calls.
 """
+import json
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Add project root to path
 import sys
@@ -14,7 +16,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import (
     PROCESSED_DIR,
-    USA_STATES,
+    PIPELINE_STATUS_FILE,
     H1B_STATE_AGGREGATE,
     JOB_POSTINGS_DAILY,
     JOB_POSTINGS_BY_STATE,
@@ -57,12 +59,35 @@ def refresh_mistakes():
     return df
 
 
+def _write_pipeline_status(status: str, tables_updated: list, message: str = "OK"):
+    """Write pipeline status for Data Engineer dashboard."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "last_run_ts": now.timestamp(),
+        "last_run_iso": now.isoformat() + "Z",
+        "status": status,
+        "tables_updated": tables_updated,
+        "message": message,
+    }
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    PIPELINE_STATUS_FILE.write_text(json.dumps(payload, indent=2))
+
+
 def run_full_refresh():
-    """Run all refresh steps (call from cron/APScheduler daily)."""
-    refresh_h1b_by_state()
-    refresh_job_postings()
-    refresh_mistakes()
-    print(f"[{datetime.now().isoformat()}] Daily refresh completed.")
+    """Run all refresh steps (call from cron/APScheduler daily). Data engineer: run this daily."""
+    tables_updated = []
+    try:
+        refresh_h1b_by_state()
+        tables_updated.append("h1b_by_state")
+        daily, by_state = refresh_job_postings()
+        tables_updated.extend(["job_postings_daily", "job_postings_by_state"])
+        refresh_mistakes()
+        tables_updated.extend(["job_application_mistakes", "mistakes_by_type"])
+        _write_pipeline_status("success", tables_updated)
+        print(f"[{datetime.now().isoformat()}] Daily refresh completed. Tables: {tables_updated}")
+    except Exception as e:
+        _write_pipeline_status("error", [], message=str(e))
+        raise
 
 
 if __name__ == "__main__":

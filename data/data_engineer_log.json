@@ -1,0 +1,37 @@
+{
+  "description": "Day-by-day work log for the Data Engineer. Edit this file to add your daily tasks; the Data Engineer dashboard will show the chart and table.",
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-02-01",
+      "tasks_done": 5,
+      "tasks": ["Project setup", "Config & paths", "Data loader + synthetic data", "Git init", "README"],
+      "status": "done",
+      "notes": "Backend skeleton and folder structure"
+    },
+    {
+      "day": 2,
+      "date": "2026-02-02",
+      "tasks_done": 6,
+      "tasks": ["H1B analytics service", "Mistake analytics", "Resume analyzer", "Daily refresh pipeline", "Pipeline status write", "Data engineer log"],
+      "status": "done",
+      "notes": "ETL and analytics services"
+    },
+    {
+      "day": 3,
+      "date": "2026-02-03",
+      "tasks_done": 5,
+      "tasks": ["Dash app + USA choropleth map", "State detail, mistakes, H1B, candidate pages", "Filters and custom CSS", "Data Engineer dashboard page", "Day-by-day chart"],
+      "status": "done",
+      "notes": "Dashboards and Data Engineer view"
+    },
+    {
+      "day": 4,
+      "date": "2026-02-04",
+      "tasks_done": 0,
+      "tasks": ["Add your daily tasks here"],
+      "status": "planned",
+      "notes": "Edit this file: data/data_engineer_log.json"
+    }
+  ]
+}

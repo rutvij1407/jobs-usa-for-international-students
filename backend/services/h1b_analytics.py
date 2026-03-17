@@ -4,6 +4,7 @@ H1B data analytics: state-level aggregations, time trends, top employers.
 import pandas as pd
 import numpy as np
 from backend.data_loader import load_h1b_by_state, load_job_postings_daily, load_job_postings_by_state
+from config.settings import STATE_CENTROIDS
 
 
 def get_state_level_metrics(
@@ -50,6 +51,28 @@ def get_top_states_by_jobs(n: int = 10) -> pd.DataFrame:
     """Top N states by job count (for tables)."""
     metrics = get_state_level_metrics()
     return metrics.nlargest(n, "job_count")[["state", "job_count", "petitions", "effectiveness_score"]]
+
+
+def get_map_data_for_google(
+    job_type: str = "All",
+    company_type: str = "All",
+    industry: str = "All",
+) -> list:
+    """Return list of {state, lat, lng, job_count, petitions, effectiveness_score} for Google Maps heatmap."""
+    df = get_state_level_metrics(job_type=job_type, company_type=company_type, industry=industry)
+    out = []
+    for _, row in df.iterrows():
+        st = row["state"]
+        lat, lng = STATE_CENTROIDS.get(st, (39.0, -98.0))
+        out.append({
+            "state": st,
+            "lat": lat,
+            "lng": lng,
+            "job_count": int(row["job_count"]),
+            "petitions": int(row["petitions"]),
+            "effectiveness_score": int(row["effectiveness_score"]),
+        })
+    return out
 
 
 def get_top_states_by_h1b(n: int = 10) -> pd.DataFrame:
